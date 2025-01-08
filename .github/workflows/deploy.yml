@@ -1,0 +1,112 @@
+name: Deploy to Google Cloud Run
+
+env:
+  GCP_PROJECT_ID:
+  # REQUIRED: Google Cloud Project ID where resources are managed.
+  # Find in Google Cloud Console or the `project_id` field of GCP_SERVICE_ACCOUNT_KEY.
+  # Example: example-project
+
+  GCP_ARTIFACT_REGISTRY_DOMAIN:
+  # REQUIRED: Regional domain for Artifact Registry.
+  # Check this in Google Cloud Console (Artifact Registry -> Select Repository -> Note the region).
+  # Example: us-central1-docker.pkg.dev
+
+  GCP_DEPLOY_REGION:
+  # REQUIRED: Region where Cloud Run services will be deployed.
+  # Use a region close to your users for better performance.
+  # Example: us-central1
+
+  GCP_SERVICE_ACCOUNT_KEY: ${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}
+  # REQUIRED: Google Cloud Service Account key in JSON format.
+  # This secret should be securely stored in GitHub Secrets.
+  # Example: { type: service_account, project_id: example-project, ... }
+
+  GCP_REPOSITORY_NAME: ${{ github.event.repository.name }}
+  # Dynamically set Registry Repository name.
+  # Example: "example-repository" for a repository named "example-repository".
+
+  GCP_CONTAINER_IMAGE_NAME: ${{ github.event.repository.name }}:latest
+  # Dynamically set Container Image name.
+  # Example: "example-repository:latest" for a repository named "example-repository".
+
+  GCP_SERVICE_NAME: ${{ github.event.repository.name }}-service
+  # Dynamically set Cloud Run service name.
+  # Example: "example-repository-service" for a repository named "example-repository".
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate Required GCP Secrets and Environment Variables
+        if: ${{ env.GCP_PROJECT_ID == '' || env.GCP_ARTIFACT_REGISTRY_DOMAIN == '' || env.GCP_DEPLOY_REGION == '' || env.GCP_SERVICE_ACCOUNT_KEY == '' }}
+        run: |
+          echo "Required GCP secrets or environment variables are missing. Please refer to the README file for setup instructions."
+          exit 1
+
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Populate Github environment variables with Github secrets
+        uses: oNaiPs/secrets-to-env-action@v1
+        with:
+          secrets: ${{ toJSON(secrets) }}
+          prefix: GITHUB_SECRET_
+
+      - name: Loop over GitHub secrets and update .env using sed
+        run: |
+          cp .env.example .env
+
+          # Loop through all the environment variables with prefix GITHUB_SECRET_
+          for secret in $(env | grep -E '^GITHUB_SECRET_' | cut -d= -f1); do
+            # Remove the GITHUB_SECRET_ prefix
+            stripped_secret="${secret#GITHUB_SECRET_}"
+            # Get the value of the environment variable
+            value="${!secret}"
+            
+            # Update .env file: only replace the secret if it exists
+            if grep -q "^$stripped_secret=" .env; then
+              sed -i "s|^$stripped_secret=.*|$stripped_secret=\"$value\"|" .env
+            fi
+          done
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SERVICE_ACCOUNT_KEY}}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Configure Docker for Google Cloud Run
+        run: gcloud auth configure-docker ${{ env.GCP_ARTIFACT_REGISTRY_DOMAIN }}
+
+      - name: Ensure Google Artifact Registry Exists
+        run: |
+          gcloud artifacts repositories describe ${{ env.GCP_REPOSITORY_NAME }} --location=${{ env.GCP_DEPLOY_REGION }} >/dev/null 2>&1 || \
+          gcloud artifacts repositories create ${{ env.GCP_REPOSITORY_NAME }}  \
+            --repository-format=docker \
+            --location=${{ env.GCP_DEPLOY_REGION }}
+
+      - name: Build and Push Docker Image
+        run: |
+          IMAGE_PATH=${{env.GCP_ARTIFACT_REGISTRY_DOMAIN}}/${{ env.GCP_PROJECT_ID }}/${{ env.GCP_REPOSITORY_NAME }}/${{ env.GCP_CONTAINER_IMAGE_NAME }}
+          docker build -t $IMAGE_PATH .
+          docker push $IMAGE_PATH
+
+      - name: Deploy to Cloud Run
+        run: |
+          IMAGE_PATH=${{env.GCP_ARTIFACT_REGISTRY_DOMAIN}}/${{ env.GCP_PROJECT_ID }}/${{ env.GCP_REPOSITORY_NAME }}/${{ env.GCP_CONTAINER_IMAGE_NAME }}
+          gcloud run deploy ${{ env.GCP_SERVICE_NAME }} \
+            --region ${{ env.GCP_DEPLOY_REGION }} \
+            --platform managed \
+            --image $IMAGE_PATH \
+            --port 8000 \
+            --allow-unauthenticated
