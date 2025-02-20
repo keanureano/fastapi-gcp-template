@@ -37,22 +37,34 @@ Template for running a FastAPI app locally with Docker Compose and deploying to 
 
 ## Deploying to GCP
 
-1. **Set Up a Service Account (if needed):**  
-   If you don’t have an existing service account:
+1. **Set Up Google Cloud**
 
-   - Create one in the Google Cloud Console.
-   - Assign these roles:
+   - Select or Create a **Google Cloud Project** in Google Cloud Console.
+   - Enable the following APIs:
+     - **Cloud Run API**
+     - **Artifact Registry API**
+     - **Cloud Build API**
+   - Select or Create a **Service Account** under **IAM & Admin > Service Accounts**, and assign these roles:
      - **Cloud Run Admin**
      - **Artifact Registry Administrator**
      - **Owner**
-   - Download the JSON key for the account and add it to GitHub Secrets as `GCP_SERVICE_ACCOUNT_KEY`.
+   - Generate a **JSON Key** under the Keys tab > Create new key > JSON, then download it.
 
-2. **Configure GitHub Workflow:**  
-   Open the GitHub workflow configuration file and update the GCP variables:
+2. **Add GitHub Secrets**  
+   Go to your GitHub repository > Settings > Secrets and variables > Actions, and add the following:
+
+   - `GCP_SERVICE_ACCOUNT_KEY`: Paste the contents of your downloaded JSON key file.
+   - `GCP_PROJECT_ID`: Find this in the `project_id` field of `GCP_SERVICE_ACCOUNT_KEY`.
+   - `GCP_ARTIFACT_REGISTRY_DOMAIN`: Check in Artifact Registry (e.g., `us-central1-docker.pkg.dev`).
+   - `GCP_DEPLOY_REGION`: Choose a Cloud Run region (e.g., `us-central1`).
+
+3. **Deploy**  
+   Push your changes to the **main** branch:
 
    ```bash
-   code .github/workflows/deploy.yml
+   git add .
+   git commit -m "Deploy update"
+   git push origin main
    ```
 
-3. **Trigger Deployment:**  
-   Push your changes to GitHub. The workflow will deploy the application to Cloud Run.
+   This triggers the **GitHub Actions workflow**, deploying the app to **Cloud Run**.
