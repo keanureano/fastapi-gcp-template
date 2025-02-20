@@ -1,37 +1,26 @@
 name: Deploy to Google Cloud Run
 
 env:
-  GCP_PROJECT_ID:
-  # REQUIRED: Google Cloud Project ID where resources are managed.
-  # Find in Google Cloud Console or the `project_id` field of GCP_SERVICE_ACCOUNT_KEY.
-  # Example: example-project
+  GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+  # Google Cloud Project ID. Found in Google Cloud Console or the `project_id` field of GCP_SERVICE_ACCOUNT_KEY.
 
-  GCP_ARTIFACT_REGISTRY_DOMAIN:
-  # REQUIRED: Regional domain for Artifact Registry.
-  # Check this in Google Cloud Console (Artifact Registry -> Select Repository -> Note the region).
-  # Example: us-central1-docker.pkg.dev
+  GCP_ARTIFACT_REGISTRY_DOMAIN: ${{ secrets.GCP_ARTIFACT_REGISTRY_DOMAIN }}
+  # Regional domain for Artifact Registry. Check in Google Cloud Console under Artifact Registry.
 
-  GCP_DEPLOY_REGION:
-  # REQUIRED: Region where Cloud Run services will be deployed.
-  # Use a region close to your users for better performance.
-  # Example: us-central1
+  GCP_DEPLOY_REGION: ${{ secrets.GCP_DEPLOY_REGION }}
+  # Cloud Run deployment region. Choose a region close to your users.
 
   GCP_SERVICE_ACCOUNT_KEY: ${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}
-  # REQUIRED: Google Cloud Service Account key in JSON format.
-  # This secret should be securely stored in GitHub Secrets.
-  # Example: { type: service_account, project_id: example-project, ... }
+  # Google Cloud Service Account key in JSON format. Stored securely in GitHub Secrets.
 
   GCP_REPOSITORY_NAME: ${{ github.event.repository.name }}
-  # Dynamically set Registry Repository name.
-  # Example: "example-repository" for a repository named "example-repository".
+  # Registry Repository name, dynamically set from the repository name.
 
   GCP_CONTAINER_IMAGE_NAME: ${{ github.event.repository.name }}:latest
-  # Dynamically set Container Image name.
-  # Example: "example-repository:latest" for a repository named "example-repository".
+  # Container Image name, dynamically set from the repository name.
 
   GCP_SERVICE_NAME: ${{ github.event.repository.name }}-service
-  # Dynamically set Cloud Run service name.
-  # Example: "example-repository-service" for a repository named "example-repository".
+  # Cloud Run service name, dynamically set from the repository name.
 
 on:
   push:
@@ -46,7 +35,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Validate Required GCP Secrets and Environment Variables
-        if: ${{ env.GCP_PROJECT_ID == '' || env.GCP_ARTIFACT_REGISTRY_DOMAIN == '' || env.GCP_DEPLOY_REGION == '' || env.GCP_SERVICE_ACCOUNT_KEY == '' }}
+        if: ${{ 
+          env.GCP_PROJECT_ID == '' || 
+          env.GCP_ARTIFACT_REGISTRY_DOMAIN == '' || 
+          env.GCP_DEPLOY_REGION == '' || 
+          env.GCP_SERVICE_ACCOUNT_KEY == '' || 
+          env.GCP_REPOSITORY_NAME == '' || 
+          env.GCP_CONTAINER_IMAGE_NAME == '' || 
+          env.GCP_SERVICE_NAME == '' 
+        }}
         run: |
           echo "Required GCP secrets or environment variables are missing. Please refer to the README file for setup instructions."
           exit 1
