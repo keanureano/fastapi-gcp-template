@@ -35,19 +35,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Validate Required GCP Secrets and Environment Variables
-        if: ${{ 
-          env.GCP_PROJECT_ID == '' || 
-          env.GCP_ARTIFACT_REGISTRY_DOMAIN == '' || 
-          env.GCP_DEPLOY_REGION == '' || 
-          env.GCP_SERVICE_ACCOUNT_KEY == '' || 
-          env.GCP_REPOSITORY_NAME == '' || 
-          env.GCP_CONTAINER_IMAGE_NAME == '' || 
-          env.GCP_SERVICE_NAME == '' 
-        }}
+        if: ${{ env.GCP_PROJECT_ID == '' || env.GCP_ARTIFACT_REGISTRY_DOMAIN == '' || env.GCP_DEPLOY_REGION == '' || env.GCP_SERVICE_ACCOUNT_KEY == '' }}
         run: |
           echo "Required GCP secrets or environment variables are missing. Please refer to the README file for setup instructions."
           exit 1
-
       - name: Checkout repository
         uses: actions/checkout@v3
 
