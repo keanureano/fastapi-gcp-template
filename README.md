@@ -28,18 +28,18 @@ Template for running a FastAPI app locally with Docker Compose and deploying to 
    Create a Python virtual environment:
 
    ```bash
-   python -m venv venv
+   python -m venv .venv
    ```
 
    Then activate it:
 
    - **On macOS/Linux:**
      ```bash
-     source venv/bin/activate
+     source .venv/bin/activate
      ```
    - **On Windows:**
      ```bash
-     venv\Scripts\activate
+     .venv\Scripts\activate
      ```
 
 3. **Install Dependencies:**  
