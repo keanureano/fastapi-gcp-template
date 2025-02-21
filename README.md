@@ -8,8 +8,10 @@ Template for running a FastAPI app locally with Docker Compose and deploying to 
 
 ## Prerequisites
 
-- Docker
-- Docker Compose
+- **Python** – Required to create a virtual environment and run the application.
+- **Docker** – Needed for containerizing the FastAPI app.
+- **Docker Compose** – Used to orchestrate and run the Docker containers during local development.
+- **Google Cloud Account** – For deploying the application to Google Cloud.
 
 ---
 
