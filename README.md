@@ -22,13 +22,40 @@ Template for running a FastAPI app locally with Docker Compose and deploying to 
    cp .env.example .env && code .env
    ```
 
-2. **Build and Start:**
+2. **Create and Activate Virtual Environment:**  
+   Create a Python virtual environment:
+
+   ```bash
+   python -m venv venv
+   ```
+
+   Then activate it:
+
+   - **On macOS/Linux:**
+     ```bash
+     source venv/bin/activate
+     ```
+   - **On Windows:**
+     ```bash
+     venv\Scripts\activate
+     ```
+
+3. **Install Dependencies:**  
+   With the virtual environment active, install the required packages:
+
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+4. **Build and Start Docker Containers:**  
+   Run the following command to build and run the Docker containers:
 
    ```bash
    docker-compose up --build
    ```
 
-3. **Stop and Clean Up:**
+5. **Stop and Clean Up:**  
+   To stop and remove the Docker containers, run:
    ```bash
    docker-compose down
    ```
